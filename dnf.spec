@@ -65,7 +65,7 @@
 It supports RPMs, modules and comps groups & environments.
 
 Name:           dnf
-Version:        4.16.1
+Version:        4.16.2
 Release:        1%{?dist}
 Summary:        %{pkg_summary}
 # For a breakdown of the licensing, see PACKAGE-LICENSING
@@ -95,7 +95,7 @@ Conflicts:      python3-dnf-plugins-extras-common < %{conflicts_dnf_plugins_extr
 %package data
 Summary:        Common data and configuration files for DNF
 Requires:       libreport-filesystem
-%if 0%{?fedora} > 38
+%if 0%{?fedora} > 40 || 0%{?rhel} > 10
 Requires:       /etc/dnf/dnf.conf
 %endif
 Obsoletes:      %{name}-conf <= %{version}-%{release}
@@ -235,7 +235,7 @@ ln -sr  %{buildroot}%{confdir}/protected.d %{buildroot}%{_sysconfdir}/yum/protec
 ln -sr  %{buildroot}%{confdir}/vars %{buildroot}%{_sysconfdir}/yum/vars
 %endif
 
-%if 0%{?fedora} > 38
+%if 0%{?fedora} > 40 || 0%{?rhel} > 10
 rm %{buildroot}%{confdir}/%{name}.conf
 %endif
 
@@ -290,13 +290,13 @@ popd
 %dir %{confdir}/modules.d
 %dir %{confdir}/modules.defaults.d
 %dir %{pluginconfpath}
-%if 0%{?fedora} <= 38
+%if ! (0%{?fedora} > 40 || 0%{?rhel} > 10)
 %dir %{confdir}/protected.d
 %dir %{confdir}/vars
 %endif
 %dir %{confdir}/aliases.d
 %exclude %{confdir}/aliases.d/zypper.conf
-%if 0%{?fedora} <= 38
+%if ! (0%{?fedora} > 40 || 0%{?rhel} > 10)
 %config(noreplace) %{confdir}/%{name}.conf
 %endif
 
@@ -380,6 +380,14 @@ popd
 %{python3_sitelib}/%{name}/automatic/
 
 %changelog
+* Thu Jul 27 2023 Nicola Sella <nsella@redhat.com> - 4.16.2-1
+- depend on /etc/dnf/dnf.conf, not libdnf5
+- Update repo metadata cache pattern to include zstd
+- Add provide exception handling
+- When parsing over a KVP list, do not return till the whole list is parsed
+- Provide /usr/bin/dnf4 symlink to /usr/bin/dnf-3
+- Document the symbols in the output of `dnf history list` (RhBug:2172067)
+
 * Mon May 29 2023 Jan Kolarik <jkolarik@redhat.com> - 4.16.1-1
 - DNF5 should not deprecate DNF on Fedora 38
 
