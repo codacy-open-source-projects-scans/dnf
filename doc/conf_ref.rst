@@ -477,6 +477,9 @@ configuration file by your distribution to override the DNF defaults.
     :ref:`string <string-label>`
 
     Used for substitution of ``$releasever`` in the repository configuration.
+
+    The ``$releasever_major`` and ``$releasever_minor`` variables will be automatically derived from ``$releasever`` by splitting it on the first ``.``. For example, if ``$releasever`` is set to ``1.23``, then ``$releasever_major`` will be ``1`` and ``$releasever_minor`` will be ``23``.
+
     See also :ref:`repo variables <repo-variables-label>`.
 
 .. _reposdir-label:
@@ -774,6 +777,18 @@ Right side of every repo option can be enriched by the following variables:
 
     Refers to the release version of operating system which DNF derives from information available in RPMDB.
 
+.. _variable-releasever_major-label:
+
+``$releasever_major``
+
+    Major version of ``$releasever``, i.e. the component of ``$releasever`` occurring before the first ``.``.
+
+.. _variable-releasever_minor-label:
+
+``$releasever_minor``
+
+    Minor version of ``$releasever``, i.e. the component of ``$releasever`` occurring after the first ``.``.
+
 .. _variable-user-defined-label:
 
 In addition to these hard coded variables, user-defined ones can also be used. They can be defined either via :ref:`variable files <varfiles-label>`, or by using special environmental variables. The names of these variables must be prefixed with DNF_VAR\_ and they can only consist of alphanumeric characters and underscores::
@@ -793,6 +808,18 @@ Although users are encouraged to use named variables, the numbered environmental
 
     [myrepo]
     baseurl=https://example.site/pub/fedora/$DNF1/releases/$releasever
+
+A limited form of shell-like parameter expansion is supported for variables.
+
+``${my_variable:-word}`` If ``my_variable`` is unset or empty, then ``word`` will be substituted. Otherwise, the value of ``my_variable`` will be substituted.
+
+``${my_variable:+word}`` If ``my_variable`` is set and not empty, then ``word`` will be substituted. Otherwise, the empty string will be substituted.
+
+Parameter expansions can be nested up to a maximum depth of 32. For example::
+
+    ${my_defined_variable:+${my_undefined_variable:-foobar}}
+
+will evaluate to ``foobar``.
 
 
 .. _conf_main_and_repo_options-label:

@@ -1028,9 +1028,6 @@ class Base(object):
                 for display_ in cb.displays:
                     display_.output = False
 
-            # block signals to disallow external interruptions of the transaction
-            rpm.blockSignals(True)
-
             self._plugins.run_pre_transaction()
 
             logger.info(_('Running transaction'))
@@ -1047,9 +1044,6 @@ class Base(object):
             return msgs
         for msg in dnf.util._post_transaction_output(self, self.transaction, _pto_callback):
             logger.debug(msg)
-
-        # unblock signals as we are done with the transaction
-        rpm.blockSignals(False)
 
         return tid
 
@@ -1690,7 +1684,16 @@ class Base(object):
                     sltr.set(provides="({} if {})".format(comps_pkg.name, comps_pkg.requires))
                 else:
                     if self.conf.obsoletes:
-                        query = query.union(self.sack.query().filterm(obsoletes=query))
+                        # If there is no installed package in the pkgs_list, add only
+                        # obsoleters of the latest versions. Otherwise behave
+                        # consistently with upgrade and add all obsoleters.
+                        # See https://bugzilla.redhat.com/show_bug.cgi?id=2176263
+                        # for details of the problem.
+                        if query.installed():
+                            query = query.union(self.sack.query().filterm(obsoletes=query))
+                        else:
+                            query = query.union(self.sack.query().filterm(
+                                obsoletes=query.filter(latest_per_arch_by_priority=True)))
                     sltr.set(pkg=query)
                 self._goal.install(select=sltr, optional=not strict)
             return remove_query
@@ -1927,7 +1930,11 @@ class Base(object):
             sltr = dnf.selector.Selector(self.sack)
             q = self.sack.query().filterm(pkg=packages)
             if self.conf.obsoletes:
-                q = q.union(self.sack.query().filterm(obsoletes=q))
+                # use only obsoletes of the latest versions
+                # See https://bugzilla.redhat.com/show_bug.cgi?id=2176263
+                # for details of the problem.
+                q = q.union(self.sack.query().filterm(
+                    obsoletes=q.filter(latest_per_arch_by_priority=True)))
             sltr = sltr.set(pkg=q)
             if reponame is not None:
                 sltr = sltr.set(reponame=reponame)
@@ -2250,7 +2257,7 @@ class Base(object):
             sltrs = subject._get_best_selectors(self, solution=solution,
                                                 obsoletes=self.conf.obsoletes, reports=True)
             if not sltrs:
-                logger.info(_('No package %s installed.'), pkg_spec)
+                logger.info(_('No match for argument: %s'), pkg_spec)
                 return 0
             for sltr in sltrs:
                 self._goal.distupgrade(select=sltr)
