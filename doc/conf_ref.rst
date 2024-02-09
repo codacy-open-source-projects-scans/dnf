@@ -433,10 +433,7 @@ configuration file by your distribution to override the DNF defaults.
 
     Note that the list can be extended by individual commands to explicitly request loading specific metadata type.
 
-    Currently only ``filelists`` value is supported. Default is ``filelists``.
-
-..
-    # TODO(jkolarik): Change the default to an empty list when dropping the filelists for Fedora 40
+    Currently only ``filelists`` value is supported. Default is an empty list.
 
 .. _persistdir-label:
 
@@ -887,7 +884,7 @@ configuration.
 
     When enabled, DNF will save bandwidth by downloading much smaller delta RPM
     files, rebuilding them to RPM locally. However, this is quite CPU and I/O
-    intensive. Default is True.
+    intensive. Default is False. It requires `/usr/bin/applydeltarpm` on the system.
 
 .. _deltarpm_percentage-label:
 

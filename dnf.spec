@@ -134,7 +134,9 @@ BuildRequires:  libmodulemd >= %{libmodulemd_version}
 Requires:       libmodulemd >= %{libmodulemd_version}
 Requires:       %{name}-data = %{version}-%{release}
 %if 0%{?fedora}
+%if 0%{?fedora} < 40
 Recommends:     deltarpm
+%endif
 # required for DNSSEC main.gpgkey_dns_verification https://dnf.readthedocs.io/en/latest/conf_ref.html
 Recommends:     python3-unbound
 %endif
@@ -383,6 +385,16 @@ popd
 %{python3_sitelib}/%{name}/automatic/
 
 %changelog
+* Thu Feb 08 2024 Jan Kolarik <jkolarik@redhat.com> - 4.19.0-1
+- filelists metadata loading on demand
+- deltarpm disabled on Fedora by default
+- conf: Introduce new optional_metadata_types option to load filelists on demand
+- cli: Add a hint for user on transaction file dependency failure
+- cli: Setup filelists metadata for commands that need them
+- util: Add function for detecting file in specs
+- Fix failing API unit test on rawhide (RhBug:2261066)
+- automatic: Use add_security_filters, not _update_security_filters
+
 * Fri Dec 08 2023 Jan Kolarik <jkolarik@redhat.com> - 4.18.2-1
 - automatic: Add feature to allow emitters to invoke on dnf error
 - dnssec: Fix parsing PGP keys for DNS validation (RhBug:2249380)
