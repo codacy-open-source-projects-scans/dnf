@@ -12,7 +12,7 @@
 %global conflicts_dnf_plugins_extras_version 4.0.4
 %global conflicts_dnfdaemon_version 0.3.19
 
-%bcond dnf5_obsoletes_dnf %[0%{?fedora} > 40 || 0%{?rhel} > 10]
+%bcond dnf5_obsoletes_dnf %[0%{?fedora} > 41 || 0%{?rhel} > 10]
 
 # override dependencies for rhel 7
 %if 0%{?rhel} == 7
@@ -79,7 +79,11 @@ BuildRequires:  cmake
 BuildRequires:  gettext
 # Documentation
 BuildRequires:  systemd
+%if 0%{?fedora} > 40 || 0%{?rhel} > 10
+BuildRequires:  bash-completion-devel
+%else
 BuildRequires:  bash-completion
+%endif
 BuildRequires:  %{_bindir}/sphinx-build-3
 Requires:       python3-%{name} = %{version}-%{release}
 %if 0%{?rhel} && 0%{?rhel} <= 7
