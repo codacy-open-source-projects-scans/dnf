@@ -628,7 +628,8 @@ class Base(object):
                         'test': rpm.RPMTRANS_FLAG_TEST,
                         'justdb': rpm.RPMTRANS_FLAG_JUSTDB,
                         'nocontexts': rpm.RPMTRANS_FLAG_NOCONTEXTS,
-                        'nocrypto': rpm.RPMTRANS_FLAG_NOFILEDIGEST}
+                        'nocrypto': rpm.RPMTRANS_FLAG_NOFILEDIGEST,
+                        'deploops': rpm.RPMTRANS_FLAG_DEPLOOPS}
     if hasattr(rpm, 'RPMTRANS_FLAG_NOCAPS'):
         # Introduced in rpm-4.14
         _TS_FLAGS_TO_RPM['nocaps'] = rpm.RPMTRANS_FLAG_NOCAPS
@@ -2335,19 +2336,22 @@ class Base(object):
 
         if not installed_pkgs:
             raise dnf.exceptions.PackagesNotInstalledError(
-                'no package matched', pkg_spec, available_nevra2pkg.values())
+                'no package matched', pkg_spec, available_q.run())
 
         cnt = 0
         clean_deps = self.conf.clean_requirements_on_remove
+        strict = self.conf.strict
         for installed_pkg in installed_pkgs:
             try:
-                available_pkg = available_nevra2pkg[ucd(installed_pkg)]
+                available_pkgs = available_nevra2pkg[ucd(installed_pkg)]
             except KeyError:
                 if not remove_na:
                     continue
                 self._goal.erase(installed_pkg, clean_deps=clean_deps)
             else:
-                self._goal.install(available_pkg)
+                sltr = dnf.selector.Selector(self.sack)
+                sltr.set(pkg=available_pkgs)
+                self._goal.install(select=sltr, optional=(not strict))
             cnt += 1
 
         if cnt == 0:
