@@ -2,17 +2,17 @@
 %define __cmake_in_source_build 1
 
 # default dependencies
-%global hawkey_version 0.73.0
+%global hawkey_version 0.73.1
 %global libcomps_version 0.1.8
 %global libmodulemd_version 2.9.3
 %global rpm_version 4.14.0
 
 # conflicts
-%global conflicts_dnf_plugins_core_version 4.0.26
+%global conflicts_dnf_plugins_core_version 4.7.0
 %global conflicts_dnf_plugins_extras_version 4.0.4
 %global conflicts_dnfdaemon_version 0.3.19
 
-%bcond dnf5_obsoletes_dnf %[0%{?fedora} > 41 || 0%{?rhel} > 10]
+%bcond dnf5_obsoletes_dnf %[0%{?fedora} > 41 || 0%{?rhel} > 11]
 
 # override dependencies for rhel 7
 %if 0%{?rhel} == 7
@@ -67,7 +67,7 @@
 It supports RPMs, modules and comps groups & environments.
 
 Name:           dnf
-Version:        4.19.0
+Version:        4.19.2
 Release:        1%{?dist}
 Summary:        %{pkg_summary}
 # For a breakdown of the licensing, see PACKAGE-LICENSING
@@ -84,6 +84,7 @@ BuildRequires:  bash-completion-devel
 %else
 BuildRequires:  bash-completion
 %endif
+Requires:       coreutils
 BuildRequires:  %{_bindir}/sphinx-build-3
 Requires:       python3-%{name} = %{version}-%{release}
 %if 0%{?rhel} && 0%{?rhel} <= 7
@@ -223,6 +224,13 @@ mkdir -p %{buildroot}%{_var}/cache/dnf/
 touch %{buildroot}%{_localstatedir}/log/%{name}.log
 ln -sr %{buildroot}%{_bindir}/dnf-3 %{buildroot}%{_bindir}/dnf
 ln -sr %{buildroot}%{_bindir}/dnf-3 %{buildroot}%{_bindir}/dnf4
+ln -sr %{buildroot}%{_datadir}/bash-completion/completions/dnf-3 %{buildroot}%{_datadir}/bash-completion/completions/dnf4
+ln -sr %{buildroot}%{_datadir}/bash-completion/completions/dnf-3 %{buildroot}%{_datadir}/bash-completion/completions/dnf
+for file in %{buildroot}%{_mandir}/man[578]/dnf4[-.]*; do
+    dir=$(dirname $file)
+    filename=$(basename $file)
+    ln -sr $file $dir/${filename/dnf4/dnf}
+done
 mv %{buildroot}%{_bindir}/dnf-automatic-3 %{buildroot}%{_bindir}/dnf-automatic
 rm -vf %{buildroot}%{_bindir}/dnf-automatic-*
 
@@ -245,6 +253,17 @@ ln -sr  %{buildroot}%{confdir}/vars %{buildroot}%{_sysconfdir}/yum/vars
 
 %if %{with dnf5_obsoletes_dnf}
 rm %{buildroot}%{confdir}/%{name}.conf
+rm %{buildroot}%{_mandir}/man5/%{name}.conf.5*
+%endif
+
+%if 0%{?fedora} >= 41 || 0%{?rhel} >= 10
+# Don't add -P to Python shebangs
+# The executable Python scripts import each other
+%undefine _py3_shebang_P
+
+%py3_shebang_fix %{buildroot}%{_bindir}/dnf-3
+%py3_shebang_fix %{buildroot}%{_bindir}/dnf-automatic
+%py3_shebang_fix %{buildroot}%{python3_sitelib}/%{name}/cli/completion_helper.py
 %endif
 
 %check
@@ -279,8 +298,6 @@ popd
 %if 0%{?rhel} && 0%{?rhel} <= 7
 %{_sysconfdir}/bash_completion.d/%{name}
 %else
-%dir %{_datadir}/bash-completion
-%dir %{_datadir}/bash-completion/completions
 %{_datadir}/bash-completion/completions/%{name}
 %endif
 %{_mandir}/man8/%{name}.8*
@@ -318,7 +335,10 @@ popd
 %ghost %attr(644,-,-) %{_sharedstatedir}/%{name}/groups.json
 %ghost %attr(755,-,-) %dir %{_sharedstatedir}/%{name}/yumdb
 %ghost %attr(755,-,-) %dir %{_sharedstatedir}/%{name}/history
+%{_mandir}/man5/%{name}4.conf.5*
+%if %{without dnf5_obsoletes_dnf}
 %{_mandir}/man5/%{name}.conf.5*
+%endif
 %{_tmpfilesdir}/%{name}.conf
 %{_sysconfdir}/libreport/events.d/collect_dnf.conf
 
@@ -368,6 +388,13 @@ popd
 %files -n python3-%{name}
 %{_bindir}/%{name}-3
 %{_bindir}/%{name}4
+%dir %{_datadir}/bash-completion
+%dir %{_datadir}/bash-completion/completions
+%{_datadir}/bash-completion/completions/%{name}-3
+%{_datadir}/bash-completion/completions/%{name}4
+%{_mandir}/man8/%{name}4.8*
+%{_mandir}/man7/dnf4.modularity.7*
+%{_mandir}/man5/dnf4-transaction-json.5*
 %exclude %{python3_sitelib}/%{name}/automatic
 %{python3_sitelib}/%{name}-*.dist-info
 %{python3_sitelib}/%{name}/
@@ -389,6 +416,26 @@ popd
 %{python3_sitelib}/%{name}/automatic/
 
 %changelog
+* Fri Mar 29 2024 Evan Goode <mail@evangoo.de> - 4.19.2-1
+- Bump libdnf requirement to 0.73.1
+
+* Thu Mar 28 2024 Evan Goode <mail@evangoo.de> - 4.19.1-1
+- Add required `.readthedocs.yaml`, `conf.py` and set `sphinx_rtd_theme`
+- Drop dnf obsoletion temporarily
+- doc: Update FAQ entry on filelists
+- build: Adapt to changes in Fedora packaging of bash-completion
+- Support RPMTRANS_FLAG_DEPLOOPS
+- Add all candidates for reinstall to solver
+- Fix handling installonly packages reasons
+- Remove confusing sentence from documentation
+- Remove "leaf" word from documentation
+- Update documentation of history userinstalled command
+- Onboard packit tests
+- doc: Makecache with timer tries only one mirror
+- ELN: Don't obsolete DNF with DNF5 yet
+- bash-completion: Complete dnf command only if we own it
+- bash-completion: Prepare ownerships for dnf5 switch
+
 * Thu Feb 08 2024 Jan Kolarik <jkolarik@redhat.com> - 4.19.0-1
 - filelists metadata loading on demand
 - deltarpm disabled on Fedora by default
