@@ -34,7 +34,6 @@
 # level=full    -> deploy all compat symlinks (conflicts with yum < 4)
 # level=minimal -> deploy a subset of compat symlinks only
 #                  (no conflict with yum >= 3.4.3-505)*
-# level=preview -> minimal level with altered paths (no conflict with yum < 4)
 # *release 505 renamed /usr/bin/yum to /usr/bin/yum-deprecated
 %global yum_compat_level full
 %global yum_subpackage_name yum
@@ -48,7 +47,6 @@
     %endif
 %endif
 %if 0%{?rhel} && 0%{?rhel} <= 7
-    %global yum_compat_level preview
     %global yum_subpackage_name nextgen-yum4
 %endif
 
@@ -301,7 +299,6 @@ popd
 %{_mandir}/man5/dnf-transaction-json.5*
 %{_unitdir}/%{name}-makecache.service
 %{_unitdir}/%{name}-makecache.timer
-%{_var}/cache/%{name}/
 
 %files data
 %license COPYING PACKAGE-LICENSING
@@ -337,13 +334,11 @@ popd
 %{_tmpfilesdir}/%{name}.conf
 
 %files -n %{yum_subpackage_name}
-%if "%{yum_compat_level}" == "full"
 %{_bindir}/yum
-%{_sysconfdir}/yum.conf
-%{_sysconfdir}/yum/pluginconf.d
-%{_sysconfdir}/yum/protected.d
-%{_sysconfdir}/yum/vars
 %{_mandir}/man8/yum.8*
+%if "%{yum_compat_level}" == "full"
+%{_sysconfdir}/yum
+%{_sysconfdir}/yum.conf
 %{_mandir}/man5/yum.conf.5.*
 %{_mandir}/man8/yum-shell.8*
 %{_mandir}/man1/yum-aliases.1*
@@ -359,24 +354,10 @@ popd
 %endif
 %else
 %exclude %{_sysconfdir}/yum.conf
-%exclude %{_sysconfdir}/yum/pluginconf.d
-%exclude %{_sysconfdir}/yum/protected.d
-%exclude %{_sysconfdir}/yum/vars
 %exclude %{confdir}/protected.d/yum.conf
 %exclude %{_mandir}/man5/yum.conf.5.*
 %exclude %{_mandir}/man8/yum-shell.8*
 %exclude %{_mandir}/man1/yum-aliases.1*
-%endif
-
-%if "%{yum_compat_level}" == "minimal"
-%{_bindir}/yum
-%{_mandir}/man8/yum.8*
-%endif
-
-%if "%{yum_compat_level}" == "preview"
-%{_bindir}/yum4
-%{_mandir}/man8/yum4.8*
-%exclude %{_mandir}/man8/yum.8*
 %endif
 
 %files -n python3-%{name}
@@ -394,6 +375,7 @@ popd
 %{python3_sitelib}/%{name}/
 %dir %{py3pluginpath}
 %dir %{py3pluginpath}/__pycache__
+%{_var}/cache/%{name}/
 
 %files automatic
 %{_bindir}/%{name}-automatic
