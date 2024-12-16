@@ -40,7 +40,7 @@ extensions and plugins.
 Plugins can modify or extend features of DNF or provide additional CLI commands on top of those
 mentioned below. If you know the name of such a command (including commands mentioned below), you
 may find/install the package which provides it using the appropriate virtual provide in the form of
-``dnf-command(<alias>)``, where ``<alias>`` is the name of the command; e.g.``dnf install
+``dnf-command(<alias>)``, where ``<alias>`` is the name of the command; e.g. ``dnf install
 'dnf-command(versionlock)'`` installs a ``versionlock`` plugin. This approach also applies to
 specifying dependencies of packages that require a particular DNF command.
 
@@ -165,11 +165,13 @@ Options
 .. _disableexcludes-label:
 
 ``--disableexcludes=[all|main|<repoid>], --disableexcludepkgs=[all|main|<repoid>]``
-    Disable the configuration file excludes. Takes one of the following three options:
+    Disable ``excludepkgs`` and ``includepkgs`` configuration options. Takes one of the following three options:
 
-    * ``all``, disables all configuration file excludes
-    * ``main``, disables excludes defined in the ``[main]`` section
-    * ``repoid``, disables excludes defined for the given repository
+    * ``all``, disables all ``excludepkgs`` and ``includepkgs`` configurations
+    * ``main``, disables ``excludepkgs`` and ``includepkgs`` defined in the ``[main]`` section
+    * ``repoid``, disables ``excludepkgs`` and ``includepkgs`` defined for the given repository
+
+    Note that the \-\ :ref:`-exclude <exclude_option-label>` option appends to the ``[main]`` ``excludepkgs`` configuration and therefore is disabled when ``main`` or ``all`` is specified.
 
 ``--disable, --set-disabled``
     Disable specified repositories (automatically saves). The option has to be used together with the
