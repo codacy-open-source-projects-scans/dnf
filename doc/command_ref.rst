@@ -8,12 +8,11 @@
   ANY WARRANTY expressed or implied, including the implied warranties of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
   Public License for more details.  You should have received a copy of the
-  GNU General Public License along with this program; if not, write to the
-  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-  02110-1301, USA.  Any Red Hat trademarks that are incorporated in the
-  source code or documentation are not subject to the GNU General Public
-  License and may only be used or replicated with the express permission of
-  Red Hat, Inc.
+  GNU General Public License along with this program; if not, see
+  <https://www.gnu.org/licenses/>.  Any Red Hat trademarks that are
+  incorporated in the source code or documentation are not subject to the GNU
+  General Public License and may only be used or replicated with the express
+  permission of Red Hat, Inc.
 
 .. _command_ref-label:
 
@@ -164,7 +163,7 @@ Options
 
 .. _disableexcludes-label:
 
-``--disableexcludes=[all|main|<repoid>], --disableexcludepkgs=[all|main|<repoid>]``
+``--disableexcludes={all|main|<repoid>}, --disableexcludepkgs={all|main|<repoid>}``
     Disable ``excludepkgs`` and ``includepkgs`` configuration options. Takes one of the following three options:
 
     * ``all``, disables all ``excludepkgs`` and ``includepkgs`` configurations
@@ -335,6 +334,16 @@ Options
     Configure DNF as if the distribution release was ``<release>``. This can
     affect cache paths, values in configuration files and mirrorlist URLs.
 
+``--releasever_major=<major version>``
+    Override the releasever_major variable, which is usually automatically
+    detected or taken from the part of ``$releasever`` before the first ``.``.
+    This option does not affect the ``$releasever`` variable.
+
+``--releasever_minor=<minor version>``
+    Override the releasever_minor variable, which is usually automatically
+    detected or taken from the part of ``$releasever`` after the first ``.``.
+    This option does not affect the ``$releasever`` variable.
+
 .. _repofrompath_options-label:
 
 
@@ -388,6 +397,11 @@ Options
 
 ``--showduplicates``
     Show duplicate packages in repositories. Applicable for the list and search commands.
+
+.. _transient_option-label:
+
+``--transient``
+    Applicable only on bootc (bootable containers) systems. Perform transactions using a transient overlay which will be lost on the next reboot. See also the :ref:`persistence <persistence-label>` configuration option.
 
 .. _verbose_options-label:
 
@@ -707,6 +721,10 @@ transactions and act according to this information (assuming the
     which specifies a transaction by a package which it manipulated. When no
     transaction is specified, list all known transactions.
 
+    Note that transient transactions (see :ref:`--transient
+    <transient_option-label>`) will be listed even though they do not make
+    persistent changes to files under ``/usr`` or to the RPM database.
+
     The "Action(s)" column lists each type of action taken in the transaction. The possible values are:
 
     * Install (I): a new package was installed on the system
@@ -1005,6 +1023,8 @@ Module Command
 ---------------
 
 | Command: ``module``
+
+.. warning:: Modularity is deprecated, and functionality will be removed in a future release of DNF5.
 
 Modularity overview is available at :ref:`man page dnf.modularity(7) <modularity-label>`.
 Module subcommands take :ref:`\<module-spec>\ <specifying_modules-label>`... arguments that specify modules or profiles.

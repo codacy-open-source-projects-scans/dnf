@@ -1,19 +1,27 @@
 .. image:: https://translate.fedoraproject.org/widgets/dnf/-/dnf-master/svg-badge.svg
     :alt: Translation status
     :target: https://translate.fedoraproject.org/engage/dnf/?utm_source=widget
-###############
- Dandified YUM
-###############
+
+==================================================================================================================================================================================================
+⚠️ **Notice:** This repository is for **DNF4** only. The current DNF version (DNF5) has its `own repo <https://github.com/rpm-software-management/dnf5>`_.
+==================================================================================================================================================================================================
+
+
+#################
+ Dandified YUM 4
+#################
 
 .. image:: https://raw.githubusercontent.com/rpm-software-management/dnf/gh-pages/logos/DNF_logo.png
  
-Dandified YUM (DNF) is the next upcoming major version of `YUM <http://yum.baseurl.org/>`_. It does package management using `RPM <http://rpm.org/>`_, `libsolv <https://github.com/openSUSE/libsolv>`_ and `hawkey <https://github.com/rpm-software-management/hawkey>`_ libraries. For metadata handling and package downloads it utilizes `librepo <https://github.com/tojaj/librepo>`_. To process and effectively handle the comps data it uses `libcomps <https://github.com/midnightercz/libcomps>`_.
+Dandified YUM 4 (DNF) is the 4th iteration of next upcoming major version of `YUM <http://yum.baseurl.org/>`_. It does package management using `RPM <http://rpm.org/>`_, `libsolv <https://github.com/openSUSE/libsolv>`_ and `hawkey <https://github.com/rpm-software-management/hawkey>`_ libraries. For metadata handling and package downloads it utilizes `librepo <https://github.com/tojaj/librepo>`_. To process and effectively handle the comps data it uses `libcomps <https://github.com/midnightercz/libcomps>`_.
+
+Join us on IRC at ``#dnf`` on `Libera.Chat <https://libera.chat>`_. Questions should be asked there, issues discussed. Remember: ``#dnf`` is not a support channel, and prior research is expected from the questioner.
 
 ============
  Installing
 ============
 
-DNF and all its dependencies are available in Fedora 18 and later, including the
+DNF4 and all its dependencies are available in Fedora 18 and later, including the
 rawhide Fedora.
 
 Optionally you can use repositories with DNF nightly builds for last 2 stable Fedora versions available at copr://rpmsoftwaremanagement/dnf-nightly. You can enable the repository e.g. using:: 
@@ -22,7 +30,7 @@ Optionally you can use repositories with DNF nightly builds for last 2 stable Fe
 
 Then install DNF typing::
 
-    sudo yum install dnf
+    sudo yum install dnf4
 
 In other RPM-based distributions you need to build all the components from their
 sources.
@@ -119,10 +127,8 @@ Please, do not create the pull requests with translation (.po) files improvement
 
 The DNF package distribution contains man pages, dnf(8) and dnf.conf(8). It is also possible to `read the DNF documentation <http://dnf.readthedocs.org>`_ online, the page includes API documentation. There's also a `wiki <https://github.com/rpm-software-management/dnf/wiki>`_ meant for contributors to DNF and related projects.
 
-====================
- Bug reporting etc.
-====================
+===============
+ Bug reporting
+===============
 
-Please report discovered bugs to the `Red Hat bugzilla <https://bugzilla.redhat.com/>`_ following this `guide <https://github.com/rpm-software-management/dnf/wiki/Bug-Reporting>`_. If you planned to propose the patch in the report, consider `Contribution`_ instead.
-
-Freenode's irc channel ``#yum`` is meant for discussions related to both YUM and DNF. Questions should be asked there, issues discussed. Remember: ``#yum`` is not a support channel and prior research is expected from the questioner.
+Please report discovered bugs to `GitHub Issues <https://github.com/rpm-software-management/dnf/issues>`_ or to the `Red Hat bugzilla <https://bugzilla.redhat.com/>`_. If you plan to propose the patch in the report, consider `Contribution`_ instead.

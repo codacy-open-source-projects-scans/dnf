@@ -7,12 +7,11 @@
 # ANY WARRANTY expressed or implied, including the implied warranties of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.  You should have received a copy of the
-# GNU General Public License along with this program; if not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.  Any Red Hat trademarks that are incorporated in the
-# source code or documentation are not subject to the GNU General Public
-# License and may only be used or replicated with the express permission of
-# Red Hat, Inc.
+# GNU General Public License along with this program; if not, see
+# <https://www.gnu.org/licenses/>.  Any Red Hat trademarks that are
+# incorporated in the source code or documentation are not subject to the GNU
+# General Public License and may only be used or replicated with the express
+# permission of Red Hat, Inc.
 
 """An extension that ensures that given features are present."""
 
@@ -32,8 +31,12 @@ if __name__ == '__main__':
 
     with dnf.Base() as base:
         # Substitutions are needed for correct interpretation of repo files.
-        RELEASEVER = dnf.rpm.detect_releasever(base.conf.installroot)
+        RELEASEVER, MAJOR, MINOR = dnf.rpm.detect_releasever(base.conf.installroot)
         base.conf.substitutions['releasever'] = RELEASEVER
+        if MAJOR is not None:
+            base.conf.substitutions['releasever_major'] = MAJOR
+        if MINOR is not None:
+            base.conf.substitutions['releasever_minor'] = MINOR
         # Repositories are needed if we want to install anything.
         base.read_all_repos()
         # A sack is required by marking methods and dependency resolving.

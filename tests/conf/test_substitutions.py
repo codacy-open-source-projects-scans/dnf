@@ -9,12 +9,11 @@
 # ANY WARRANTY expressed or implied, including the implied warranties of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.  You should have received a copy of the
-# GNU General Public License along with this program; if not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.  Any Red Hat trademarks that are incorporated in the
-# source code or documentation are not subject to the GNU General Public
-# License and may only be used or replicated with the express permission of
-# Red Hat, Inc.
+# GNU General Public License along with this program; if not, see
+# <https://www.gnu.org/licenses/>.  Any Red Hat trademarks that are
+# incorporated in the source code or documentation are not subject to the GNU
+# General Public License and may only be used or replicated with the express
+# permission of Red Hat, Inc.
 #
 
 from __future__ import absolute_import
@@ -56,16 +55,6 @@ class SubstitutionsFromEnvironmentTest(tests.support.TestCase):
         self.assertEqual('opera', conf.substitutions['GENRE'])
 
 
-class SubstitutionsReadOnlyTest(tests.support.TestCase):
-    def test_set_readonly(self):
-        conf = dnf.conf.Conf()
-        variable_name = "releasever_major"
-        self.assertTrue(Substitutions.is_read_only(variable_name))
-        with self.assertRaises(ReadOnlyVariableError) as cm:
-            conf.substitutions["releasever_major"] = "1"
-        self.assertEqual(cm.exception.variable_name, "releasever_major")
-
-
 class SubstitutionsReleaseverTest(tests.support.TestCase):
     def test_releasever_simple(self):
         conf = dnf.conf.Conf()
@@ -84,3 +73,12 @@ class SubstitutionsReleaseverTest(tests.support.TestCase):
         conf.substitutions["releasever"] = "1.23.45"
         self.assertEqual(conf.substitutions["releasever_major"], "1")
         self.assertEqual(conf.substitutions["releasever_minor"], "23.45")
+
+    def test_releasever_major_minor_overrides(self):
+        conf = dnf.conf.Conf()
+        conf.substitutions["releasever"] = "1.23"
+        conf.substitutions["releasever_major"] = "45"
+        conf.substitutions["releasever_minor"] = "67"
+        self.assertEqual(conf.substitutions["releasever"], "1.23")
+        self.assertEqual(conf.substitutions["releasever_major"], "45")
+        self.assertEqual(conf.substitutions["releasever_minor"], "67")

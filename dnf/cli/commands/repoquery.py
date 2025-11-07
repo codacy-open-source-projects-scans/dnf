@@ -8,12 +8,11 @@
 # ANY WARRANTY expressed or implied, including the implied warranties of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.  You should have received a copy of the
-# GNU General Public License along with this program; if not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.  Any Red Hat trademarks that are incorporated in the
-# source code or documentation are not subject to the GNU General Public
-# License and may only be used or replicated with the express permission of
-# Red Hat, Inc.
+# GNU General Public License along with this program; if not, see
+# <https://www.gnu.org/licenses/>.  Any Red Hat trademarks that are
+# incorporated in the source code or documentation are not subject to the GNU
+# General Public License and may only be used or replicated with the express
+# permission of Red Hat, Inc.
 #
 
 from __future__ import absolute_import
@@ -126,7 +125,7 @@ class RepoQueryCommand(commands.Command):
         parser.add_argument('--show-duplicates', action='store_true',
                             help=_("Query all versions of packages (default)"))
         parser.add_argument('--arch', '--archlist', dest='arches', default=[],
-                            action=_CommaSplitCallback, metavar='[arch]',
+                            action=_CommaSplitCallback, metavar='ARCH',
                             help=_('show only results from this ARCH'))
         parser.add_argument('-f', '--file', metavar='FILE', nargs='+',
                             help=_('show only results that owns FILE'))

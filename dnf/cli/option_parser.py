@@ -10,12 +10,11 @@
 # ANY WARRANTY expressed or implied, including the implied warranties of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.  You should have received a copy of the
-# GNU General Public License along with this program; if not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.  Any Red Hat trademarks that are incorporated in the
-# source code or documentation are not subject to the GNU General Public
-# License and may only be used or replicated with the express permission of
-# Red Hat, Inc.
+# GNU General Public License along with this program; if not, see
+# <https://www.gnu.org/licenses/>.  Any Red Hat trademarks that are
+# incorporated in the source code or documentation are not subject to the GNU
+# General Public License and may only be used or replicated with the express
+# permission of Red Hat, Inc.
 #
 
 from __future__ import unicode_literals
@@ -171,7 +170,7 @@ class OptionParser(argparse.ArgumentParser):
         general_grp = self.add_argument_group(_('General {prog} options'.format(
             prog=dnf.util.MAIN_PROG_UPPER)))
         general_grp.add_argument("-c", "--config", dest="config_file_path",
-                                 default=None, metavar='[config file]',
+                                 default=None, metavar='CONFIG_FILE',
                                  help=_("config file location"))
         general_grp.add_argument("-q", "--quiet", dest="quiet",
                                  action="store_true", default=None,
@@ -182,7 +181,7 @@ class OptionParser(argparse.ArgumentParser):
                                  help=_("show {prog} version and exit").format(
                                      prog=dnf.util.MAIN_PROG_UPPER))
         general_grp.add_argument("--installroot", help=_("set install root"),
-                                 metavar='[path]')
+                                 metavar='PATH')
         general_grp.add_argument("--nodocs", action="store_const", const=['nodocs'], dest='tsflags',
                                  help=_("do not install documentations"))
         general_grp.add_argument("--noplugins", action="store_false",
@@ -191,13 +190,19 @@ class OptionParser(argparse.ArgumentParser):
         general_grp.add_argument("--enableplugin", dest="enableplugin",
                                  default=[], action=self._SplitCallback,
                                  help=_("enable plugins by name"),
-                                 metavar='[plugin]')
+                                 metavar='PLUGIN')
         general_grp.add_argument("--disableplugin", dest="disableplugin",
                                  default=[], action=self._SplitCallback,
                                  help=_("disable plugins by name"),
-                                 metavar='[plugin]')
+                                 metavar='PLUGIN')
         general_grp.add_argument("--releasever", default=None,
                                  help=_("override the value of $releasever"
+                                        " in config and repo files"))
+        general_grp.add_argument("--releasever-major", default=None,
+                                 help=_("override the value of $releasever_major"
+                                        " in config and repo files"))
+        general_grp.add_argument("--releasever-minor", default=None,
+                                 help=_("override the value of $releasever_minor"
                                         " in config and repo files"))
         general_grp.add_argument("--setopt", dest="setopts", default=[],
                                  action=self._SetoptsCallback,
@@ -223,10 +228,10 @@ class OptionParser(argparse.ArgumentParser):
                                  help=_("run entirely from system cache, "
                                         "don't update cache"))
         general_grp.add_argument("-R", "--randomwait", dest="sleeptime", type=int,
-                                 default=None, metavar='[minutes]',
+                                 default=None, metavar='MINUTES',
                                  help=_("maximum command wait time"))
         general_grp.add_argument("-d", "--debuglevel", dest="debuglevel",
-                                 metavar='[debug level]', default=None,
+                                 metavar='DEBUG_LEVEL', default=None,
                                  help=_("debugging output level"), type=int)
         general_grp.add_argument("--debugsolver",
                                  action="store_true", default=None,
@@ -246,7 +251,7 @@ class OptionParser(argparse.ArgumentParser):
                                         "repoquery").format(prog=dnf.util.MAIN_PROG))
         general_grp.add_argument("--rpmverbosity", default=None,
                                  help=_("debugging output level for rpm"),
-                                 metavar='[debug level name]')
+                                 metavar='DEBUG_LEVEL_NAME')
         general_grp.add_argument("-y", "--assumeyes", action="store_true",
                                  default=None, help=_("automatically answer yes"
                                                       " for all questions"))
@@ -254,20 +259,20 @@ class OptionParser(argparse.ArgumentParser):
                                  default=None, help=_("automatically answer no"
                                                       " for all questions"))
         general_grp.add_argument("--enablerepo", action=self._RepoCallback,
-                                 dest='repos_ed', default=[], metavar='[repo]',
+                                 dest='repos_ed', default=[], metavar='REPO',
                                  help=_("Temporarily enable repositories for the purpose "
                                         "of the current dnf command. Accepts an id, a "
                                         "comma-separated list of ids, or a glob of ids. "
                                         "This option can be specified multiple times."))
         repo_group = general_grp.add_mutually_exclusive_group()
         repo_group.add_argument("--disablerepo", action=self._RepoCallback,
-                                dest='repos_ed', default=[], metavar='[repo]',
+                                dest='repos_ed', default=[], metavar='REPO',
                                 help=_("Temporarily disable active repositories for the "
                                        "purpose of the current dnf command. Accepts an id, "
                                        "a comma-separated list of ids, or a glob of ids. "
                                        "This option can be specified multiple times, but "
                                        "is mutually exclusive with `--repo`."))
-        repo_group.add_argument('--repo', '--repoid', metavar='[repo]', dest='repo',
+        repo_group.add_argument('--repo', '--repoid', metavar='REPO', dest='repo',
                                 action=self._SplitCallback, default=[],
                                 help=_('enable just specific repositories by an id or a glob, '
                                        'can be specified multiple times'))
@@ -283,15 +288,15 @@ class OptionParser(argparse.ArgumentParser):
         general_grp.add_argument("-x", "--exclude", "--excludepkgs", default=[],
                                  dest='excludepkgs', action=self._SplitCallback,
                                  help=_("exclude packages by name or glob"),
-                                 metavar='[package]')
+                                 metavar='PACKAGE')
         general_grp.add_argument("--disableexcludes", "--disableexcludepkgs",
                                  default=[], dest="disable_excludes",
                                  action=self._SplitCallback,
                                  help=_("disable excludepkgs"),
-                                 metavar='[repo]')
+                                 metavar='{all, main, REPOID}')
         general_grp.add_argument("--repofrompath", default={},
                                  action=self._SplitExtendDictCallback,
-                                 metavar='[repo,path]',
+                                 metavar='REPO,PATH',
                                  help=_("label and path to an additional repository to use (same "
                                         "path as in a baseurl), can be specified multiple times."))
         general_grp.add_argument("--noautoremove", action="store_false",
@@ -317,6 +322,9 @@ class OptionParser(argparse.ArgumentParser):
         general_grp.add_argument("--downloadonly", dest="downloadonly",
                                  action="store_true", default=False,
                                  help=_("only download packages"))
+        general_grp.add_argument("--transient", dest="persistence",
+                                 action="store_const", const="transient", default=None,
+                                 help=_("Use a transient overlay which will reset on reboot"))
         general_grp.add_argument("--comment", dest="comment", default=None,
                                  help=_("add a comment to transaction"))
         # Updateinfo options...

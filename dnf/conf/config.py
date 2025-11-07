@@ -9,12 +9,11 @@
 # ANY WARRANTY expressed or implied, including the implied warranties of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.  You should have received a copy of the
-# GNU General Public License along with this program; if not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.  Any Red Hat trademarks that are incorporated in the
-# source code or documentation are not subject to the GNU General Public
-# License and may only be used or replicated with the express permission of
-# Red Hat, Inc.
+# GNU General Public License along with this program; if not, see
+# <https://www.gnu.org/licenses/>.  Any Red Hat trademarks that are
+# incorporated in the source code or documentation are not subject to the GNU
+# General Public License and may only be used or replicated with the express
+# permission of Red Hat, Inc.
 #
 
 from __future__ import absolute_import
@@ -343,7 +342,7 @@ class MainConf(BaseConfig):
                        'best', 'assumeyes', 'assumeno', 'clean_requirements_on_remove', 'gpgcheck',
                        'showdupesfromrepos', 'plugins', 'ip_resolve',
                        'rpmverbosity', 'disable_excludes', 'color',
-                       'downloadonly', 'exclude', 'excludepkgs', 'skip_broken',
+                       'downloadonly', 'persistence', 'exclude', 'excludepkgs', 'skip_broken',
                        'tsflags', 'arch', 'basearch', 'ignorearch', 'cacheonly', 'comment']
 
         for name in config_args:
@@ -417,6 +416,12 @@ class MainConf(BaseConfig):
         if skip_broken_val:
             self._set_value('strict', not skip_broken_val, self._get_priority('skip_broken'))
 
+        usr_drift_protected_paths = self._get_value('usr_drift_protected_paths')
+        if usr_drift_protected_paths:
+            optional_metadata_types = set(self._get_value('optional_metadata_types'))
+            optional_metadata_types.add('filelists')
+            self._set_value('optional_metadata_types', list(optional_metadata_types))
+
     @property
     def releasever(self):
         # :api
@@ -425,10 +430,52 @@ class MainConf(BaseConfig):
     @releasever.setter
     def releasever(self, val):
         # :api
+        """
+        Sets the releasever variable and sets releasever_major and
+        releasever_minor accordingly. releasever_major is set to the part of
+        $releasever before the first ".". releasever_minor is set to the part
+        after the first ".".
+        """
         if val is None:
             self.substitutions.pop('releasever', None)
             return
         self.substitutions['releasever'] = str(val)
+
+    @property
+    def releasever_major(self):
+        # :api
+        return self.substitutions.get('releasever_major')
+
+    @releasever_major.setter
+    def releasever_major(self, val):
+        # :api
+        """
+        Override the releasever_major variable, which is usually derived from
+        the releasever variable. This setter does not update the value of
+        $releasever.
+        """
+        if val is None:
+            self.substitutions.pop('releasever_major', None)
+            return
+        self.substitutions['releasever_major'] = str(val)
+
+    @property
+    def releasever_minor(self):
+        # :api
+        return self.substitutions.get('releasever_minor')
+
+    @releasever_minor.setter
+    def releasever_minor(self, val):
+        # :api
+        """
+        Override the releasever_minor variable, which is usually derived from
+        the releasever variable. This setter does not update the value of
+        $releasever.
+        """
+        if val is None:
+            self.substitutions.pop('releasever_minor', None)
+            return
+        self.substitutions['releasever_minor'] = str(val)
 
     @property
     def arch(self):

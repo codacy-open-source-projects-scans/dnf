@@ -9,12 +9,11 @@
 # ANY WARRANTY expressed or implied, including the implied warranties of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.  You should have received a copy of the
-# GNU General Public License along with this program; if not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.  Any Red Hat trademarks that are incorporated in the
-# source code or documentation are not subject to the GNU General Public
-# License and may only be used or replicated with the express permission of
-# Red Hat, Inc.
+# GNU General Public License along with this program; if not, see
+# <https://www.gnu.org/licenses/>.  Any Red Hat trademarks that are
+# incorporated in the source code or documentation are not subject to the GNU
+# General Public License and may only be used or replicated with the express
+# permission of Red Hat, Inc.
 #
 
 from __future__ import absolute_import
@@ -191,7 +190,7 @@ class ConfigureTest(tests.support.DnfBaseTestCase):
         # call setUp() once again *after* am_i_root() is mocked so the cachedir is set as expected
         self.setUp()
         self.base._conf.installroot = self._installroot
-        with mock.patch('dnf.rpm.detect_releasever', return_value=69):
+        with mock.patch('dnf.rpm.detect_releasevers', return_value=(69, None, None)):
             self.cli.configure(['update', '-c', self.conffile])
         reg = re.compile('^' + self._installroot + '/var/tmp/dnf-[.a-zA-Z0-9_-]+$')
         self.assertIsNotNone(reg.match(self.base.conf.cachedir))
@@ -203,7 +202,7 @@ class ConfigureTest(tests.support.DnfBaseTestCase):
     def test_configure_root(self):
         """ Test Cli.configure as root."""
         self.base._conf = dnf.conf.Conf()
-        with mock.patch('dnf.rpm.detect_releasever', return_value=69):
+        with mock.patch('dnf.rpm.detect_releasevers', return_value=(69, None, None)):
             self.cli.configure(['update', '--nogpgcheck', '-c', self.conffile])
         reg = re.compile('^/var/cache/dnf$')
         self.assertIsNotNone(reg.match(self.base.conf.system_cachedir))
@@ -213,7 +212,7 @@ class ConfigureTest(tests.support.DnfBaseTestCase):
 
     def test_configure_verbose(self):
         self.base._conf.installroot = self._installroot
-        with mock.patch('dnf.rpm.detect_releasever', return_value=69):
+        with mock.patch('dnf.rpm.detect_releasevers', return_value=(69, None, None)):
             self.cli.configure(['-v', 'update', '-c', self.conffile])
         parser = argparse.ArgumentParser()
         expected = "%s -v update -c %s " % (parser.prog, self.conffile)
@@ -225,7 +224,7 @@ class ConfigureTest(tests.support.DnfBaseTestCase):
     @mock.patch('os.path.exists', return_value=True)
     def test_conf_exists_in_installroot(self, ospathexists):
         with mock.patch('logging.Logger.warning'), \
-                mock.patch('dnf.rpm.detect_releasever', return_value=69):
+                mock.patch('dnf.rpm.detect_releasevers', return_value=(69, None, None)):
             self.cli.configure(['--installroot', '/roots/dnf', 'update'])
         self.assertEqual(self.base.conf.config_file_path, '/roots/dnf/etc/dnf/dnf.conf')
         self.assertEqual(self.base.conf.installroot, '/roots/dnf')
@@ -233,7 +232,7 @@ class ConfigureTest(tests.support.DnfBaseTestCase):
     @mock.patch('dnf.cli.cli.Cli._parse_commands', new=mock.MagicMock)
     @mock.patch('os.path.exists', return_value=False)
     def test_conf_notexists_in_installroot(self, ospathexists):
-        with mock.patch('dnf.rpm.detect_releasever', return_value=69):
+        with mock.patch('dnf.rpm.detect_releasevers', return_value=(69, None, None)):
             self.cli.configure(['--installroot', '/roots/dnf', 'update'])
         self.assertEqual(self.base.conf.config_file_path, '/etc/dnf/dnf.conf')
         self.assertEqual(self.base.conf.installroot, '/roots/dnf')

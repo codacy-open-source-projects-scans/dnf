@@ -13,8 +13,7 @@
 # GNU Library General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# along with this program; if not, see <https://www.gnu.org/licenses/>.
 #
 
 import calendar
@@ -222,6 +221,10 @@ class TransactionWrapper(object):
     def comment(self):
         return self._trans.getComment()
 
+    @property
+    def persistence(self):
+        return self._trans.getPersistence()
+
     def tids(self):
         return [self._trans.getId()]
 
@@ -264,6 +267,10 @@ class MergedTransactionWrapper(TransactionWrapper):
     @property
     def cmdline(self):
         return self._trans.listCmdlines()
+
+    @property
+    def persistence(self):
+        return self._trans.listPersistences()
 
     @property
     def releasever(self):
@@ -418,7 +425,8 @@ class SwdbInterface(object):
 #        return result
 
     # TODO: rename to begin_transaction?
-    def beg(self, rpmdb_version, using_pkgs, tsis, cmdline=None, comment=""):
+    def beg(self, rpmdb_version, using_pkgs, tsis, cmdline=None, comment="",
+            persistence=libdnf.transaction.TransactionPersistence_UNKNOWN):
         try:
             self.swdb.initTransaction()
         except:
@@ -431,6 +439,7 @@ class SwdbInterface(object):
             int(misc.getloginuid()),
             comment)
         self.swdb.setReleasever(self.releasever)
+        self.swdb.setPersistence(persistence)
         self._tid = tid
 
         return tid
@@ -446,8 +455,6 @@ class SwdbInterface(object):
 
     def log_scriptlet_output(self, msg):
         if not hasattr(self, '_tid'):
-            return
-        if not msg:
             return
         for line in msg.splitlines():
             line = ucd(line)

@@ -12,8 +12,7 @@
 # GNU Library General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# along with this program; if not, see <https://www.gnu.org/licenses/>.
 
 """
 Supplies the Base class.
@@ -118,6 +117,7 @@ class Base(object):
         self._update_security_options = {}
         self._allow_erasing = False
         self._repo_set_imported_gpg_keys = set()
+        self._persistence = libdnf.transaction.TransactionPersistence_UNKNOWN
         self.output = None
 
     def __enter__(self):
@@ -157,8 +157,14 @@ class Base(object):
         conf = dnf.conf.Conf()
         subst = conf.substitutions
         if 'releasever' not in subst:
-            subst['releasever'] = \
-                dnf.rpm.detect_releasever(conf.installroot)
+            releasever, major, minor = \
+                dnf.rpm.detect_releasevers(conf.installroot)
+            subst['releasever'] = releasever
+            if major is not None:
+                subst['releasever_major'] = major
+            if minor is not None:
+                subst['releasever_minor'] = minor
+
         return conf
 
     def _setup_modular_excludes(self):
@@ -967,7 +973,7 @@ class Base(object):
                 else:
                     rpmdb_version = old.end_rpmdb_version
 
-                self.history.beg(rpmdb_version, [], [], cmdline)
+                self.history.beg(rpmdb_version, [], [], cmdline=cmdline, persistence=self._persistence)
                 self.history.end(rpmdb_version)
             self._plugins.run_pre_transaction()
             self._plugins.run_transaction()
@@ -1118,7 +1124,8 @@ class Base(object):
                 cmdline = ' '.join(self.cmds)
 
             comment = self.conf.comment if self.conf.comment else ""
-            tid = self.history.beg(rpmdbv, using_pkgs, [], cmdline, comment)
+            tid = self.history.beg(rpmdbv, using_pkgs, [], cmdline=cmdline,
+                                   comment=comment, persistence=self._persistence)
 
         if self.conf.reset_nice:
             onice = os.nice(0)
@@ -2640,7 +2647,7 @@ class Base(object):
                     'package.\n'
                     'Check that the correct key URLs are configured for '
                     'this repository.') % repo.name
-            raise dnf.exceptions.Error(_prov_key_data(msg))
+            raise dnf.exceptions.InvalidInstalledGPGKeyError(_prov_key_data(msg))
 
         # Check if the newly installed keys helped
         result, errmsg = self._sig_check_pkg(po)

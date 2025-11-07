@@ -12,8 +12,7 @@
 # GNU Library General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# along with this program; if not, see <https://www.gnu.org/licenses/>.
 #
 # Written by Seth Vidal
 
@@ -29,7 +28,9 @@ try:
     from collections.abc import Sequence
 except ImportError:
     from collections import Sequence
+from collections import defaultdict
 import datetime
+from fnmatch import fnmatch
 import logging
 import operator
 import os
@@ -211,22 +212,71 @@ class BaseCli(dnf.Base):
             if self.conf.downloadonly:
                 logger.info(_("{prog} will only download packages for the transaction.").format(
                     prog=dnf.util.MAIN_PROG_UPPER))
+
             elif 'test' in self.conf.tsflags:
                 logger.info(_("{prog} will only download packages, install gpg keys, and check the "
                               "transaction.").format(prog=dnf.util.MAIN_PROG_UPPER))
-            if dnf.util._is_bootc_host() and \
-                    os.path.realpath(self.conf.installroot) == "/" and \
-                    not self.conf.downloadonly:
-                _bootc_host_msg = _("""
-*** Error: system is configured to be read-only; for more
-*** information run `bootc --help`.
-""")
-                logger.info(_bootc_host_msg)
-                raise CliError(_("Operation aborted."))
+
+            is_bootc_transaction = dnf.util._BootcSystem.is_bootc_system() and \
+                os.path.realpath(self.conf.installroot) == "/" and \
+                not self.conf.downloadonly
+
+            # Handle bootc transactions. `--transient` must be specified if
+            # /usr is not already writeable.
+            bootc_system = None
+            if is_bootc_transaction:
+                if self.conf.persistence == "persist":
+                    logger.info(_("Persistent transactions aren't supported on bootc systems."))
+                    raise CliError(_("Operation aborted."))
+                assert self.conf.persistence in ("auto", "transient")
+
+                bootc_system = dnf.util._BootcSystem()
+
+                if not bootc_system.is_writable():
+                    if self.conf.persistence == "auto":
+                        logger.info(_("This bootc system is configured to be read-only. Pass --transient to "
+                                      "perform this transaction in a transient overlay which will reset when "
+                                      "the system reboots."))
+                        raise CliError(_("Operation aborted."))
+                    assert self.conf.persistence == "transient"
+                    if not bootc_system.is_unlocked_transient():
+                        # Only tell the user about the transient overlay if
+                        # it's not already in place
+                        logger.info(_("A transient overlay will be created on /usr that will be discarded on reboot. "
+                                      "Keep in mind that changes to /etc and /var will still persist, and packages "
+                                      "commonly modify these directories."))
+                self._persistence = libdnf.transaction.TransactionPersistence_TRANSIENT
+
+                # Check whether the transaction modifies usr_drift_protected_paths
+                transaction_protected_paths = defaultdict(list)
+                for pkg in trans:
+                    for pkg_file_path in sorted(pkg.files):
+                        for protected_pattern in self.conf.usr_drift_protected_paths:
+                            if fnmatch(pkg_file_path, protected_pattern):
+                                transaction_protected_paths[pkg.nevra].append(pkg_file_path)
+                if transaction_protected_paths:
+                    logger.info(_('This operation would modify the following paths, possibly introducing '
+                                  'inconsistencies when the transient overlay on /usr is discarded. See the '
+                                  'usr_drift_protected_paths configuration option for more information.'))
+                    for nevra, protected_paths in transaction_protected_paths.items():
+                        logger.info(nevra)
+                        for protected_path in protected_paths:
+                            logger.info("  %s" % protected_path)
+                    raise CliError(_("Operation aborted. Pass --setopt=usr_drift_protected_paths= to disable this check and proceed anyway."))
+
+            else:
+                # Not a bootc transaction.
+                if self.conf.persistence == "transient":
+                    raise CliError(_("Transient transactions are only supported on bootc systems."))
+
+                self._persistence = libdnf.transaction.TransactionPersistence_PERSIST
 
             if self._promptWanted():
                 if self.conf.assumeno or not self.output.userconfirm():
                     raise CliError(_("Operation aborted."))
+
+            if bootc_system:
+                bootc_system.make_writable()
         else:
             logger.info(_('Nothing to do.'))
             return
@@ -284,6 +334,7 @@ class BaseCli(dnf.Base):
         :raises: Will raise :class:`Error` if there's a problem
         """
         error_messages = []
+        print_plugin_recommendation = False
         for po in pkgs:
             result, errmsg = self._sig_check_pkg(po)
 
@@ -304,6 +355,8 @@ class BaseCli(dnf.Base):
                     self._get_key_for_package(po, fn)
                 except (dnf.exceptions.Error, ValueError) as e:
                     error_messages.append(str(e))
+                    if isinstance(e, dnf.exceptions.InvalidInstalledGPGKeyError):
+                        print_plugin_recommendation = True
 
             else:
                 # Fatal error
@@ -312,18 +365,23 @@ class BaseCli(dnf.Base):
         if error_messages:
             for msg in error_messages:
                 logger.critical(msg)
+            if print_plugin_recommendation:
+                msg = '\n' + _("Try to add '--enableplugin=expired-pgp-keys' to resolve the problem. "
+                               "Note: This plugin might not be installed by default, as it is part of "
+                               "the 'dnf-plugins-core' package.") + '\n'
+                logger.info(msg)
             raise dnf.exceptions.Error(_("GPG check FAILED"))
 
     def latest_changelogs(self, package):
-        """Return list of changelogs for package newer then installed version"""
-        newest = None
-        # find the date of the newest changelog for installed version of package
+        """Return list of changelogs for package newer then newest installed version"""
+        newest_times = []
+        # find the date of the newest changelog for installed versions of package
         # stored in rpmdb
         for mi in self._rpmconn.readonly_ts.dbMatch('name', package.name):
             changelogtimes = mi[rpm.RPMTAG_CHANGELOGTIME]
             if changelogtimes:
-                newest = datetime.date.fromtimestamp(changelogtimes[0])
-                break
+                newest_times.append(datetime.date.fromtimestamp(changelogtimes[0]))
+        newest = max(newest_times) if newest_times else None
         chlogs = [chlog for chlog in package.changelogs
                   if newest is None or chlog['timestamp'] > newest]
         return chlogs
@@ -808,7 +866,7 @@ class Cli(object):
                                           dnf.conf.PRIO_DEFAULT)
                 self.demands.cacheonly = True
             self.base.conf._configure_from_options(opts)
-            self._read_conf_file(opts.releasever)
+            self._read_conf_file(opts.releasever, opts.releasever_major, opts.releasever_minor)
             if 'arch' in opts:
                 self.base.conf.arch = opts.arch
             self.base.conf._adjust_conf_options()
@@ -822,7 +880,7 @@ class Cli(object):
         if opts.destdir is not None:
             self.base.conf.destdir = opts.destdir
             if not self.base.conf.downloadonly and opts.command not in (
-                    'download', 'system-upgrade', 'reposync', 'modulesync'):
+                    'download', 'manifest', 'system-upgrade', 'reposync', 'modulesync'):
                 logger.critical(_('--destdir or --downloaddir must be used with --downloadonly '
                                   'or download or system-upgrade command.')
                 )
@@ -917,7 +975,8 @@ class Cli(object):
                       )
                 )
 
-    def _read_conf_file(self, releasever=None):
+
+    def _read_conf_file(self, releasever=None, releasever_major=None, releasever_minor=None):
         timer = dnf.logging.Timer('config')
         conf = self.base.conf
 
@@ -943,13 +1002,29 @@ class Cli(object):
             from_root = "/"
         subst = conf.substitutions
         subst.update_from_etc(from_root, varsdir=conf._get_value('varsdir'))
+
         # cachedir, logs, releasever, and gpgkey are taken from or stored in installroot
+
+        det_major = None
+        det_minor = None
         if releasever is None and conf.releasever is None:
-            releasever = dnf.rpm.detect_releasever(conf.installroot)
+            releasever, det_major, det_minor = dnf.rpm.detect_releasevers(conf.installroot)
         elif releasever == '/':
-            releasever = dnf.rpm.detect_releasever(releasever)
-        if releasever is not None:
-            conf.releasever = releasever
+            releasever, det_major, det_minor = dnf.rpm.detect_releasevers(releasever)
+
+        def or_else(*args):
+            for arg in args:
+                if arg is not None:
+                    return arg
+            return None
+        # Setting conf.releasever rewrites conf.releasever_major and
+        # conf.releasever_minor. Copy them for later use.
+        old_releasever_major = conf.releasever_major
+        old_releasever_minor = conf.releasever_minor
+        conf.releasever = or_else(releasever, conf.releasever)
+        conf.releasever_major = or_else(releasever_major, det_major, old_releasever_major)
+        conf.releasever_minor = or_else(releasever_minor, det_minor, old_releasever_minor)
+
         if conf.releasever is None:
             logger.warning(_("Unable to detect release version (use '--releasever' to specify "
                              "release version)"))

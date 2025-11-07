@@ -8,12 +8,11 @@
   ANY WARRANTY expressed or implied, including the implied warranties of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
   Public License for more details.  You should have received a copy of the
-  GNU General Public License along with this program; if not, write to the
-  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-  02110-1301, USA.  Any Red Hat trademarks that are incorporated in the
-  source code or documentation are not subject to the GNU General Public
-  License and may only be used or replicated with the express permission of
-  Red Hat, Inc.
+  GNU General Public License along with this program; if not, see
+  <https://www.gnu.org/licenses/>.  Any Red Hat trademarks that are
+  incorporated in the source code or documentation are not subject to the GNU
+  General Public License and may only be used or replicated with the express
+  permission of Red Hat, Inc.
 
 ===================================
  Progress Reporting with Callbacks
@@ -96,7 +95,13 @@
     TRANS_POST         The post-trans phase started. In this case, all the other arguments are ``None``. 4
     ================== ================================================================================= ===========
 
-  \*\ This is order in which state of transaction which callback action can appear. Only PKG_SCRIPTLET
-  can appear anytime during transaction even before transaction starts.
+    \*\ This is order in which state of transaction which callback action can appear. Only PKG_SCRIPTLET
+    can appear anytime during transaction even before transaction starts.
 
-  `ti_done` is the number of processed bytes of the transaction item, `ti_total` is the total number of bytes of the transaction item, `ts_done` is the number of actions processed in the whole transaction and `ts_total` is the total number of actions in the whole transaction.
+    `ti_done` is the number of processed bytes of the transaction item, `ti_total` is the total number of bytes
+    of the transaction item, `ts_done` is the number of actions processed in the whole transaction and `ts_total`
+    is the total number of actions in the whole transaction.
+
+  .. method:: scriptout(msgs)
+
+    Report the bytes from the combined stdout/stderr of a scriptlet.

@@ -10,23 +10,23 @@
 # ANY WARRANTY expressed or implied, including the implied warranties of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.  You should have received a copy of the
-# GNU General Public License along with this program; if not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.  Any Red Hat trademarks that are incorporated in the
-# source code or documentation are not subject to the GNU General Public
-# License and may only be used or replicated with the express permission of
-# Red Hat, Inc.
+# GNU General Public License along with this program; if not, see
+# <https://www.gnu.org/licenses/>.  Any Red Hat trademarks that are
+# incorporated in the source code or documentation are not subject to the GNU
+# General Public License and may only be used or replicated with the express
+# permission of Red Hat, Inc.
 #
 
 import logging
 import os
 import re
 
+from libdnf.conf import ConfigParser
 from dnf.i18n import _
 from dnf.exceptions import ReadOnlyVariableError
 
 ENVIRONMENT_VARS_RE = re.compile(r'^DNF_VAR_[A-Za-z0-9_]+$')
-READ_ONLY_VARIABLES = frozenset(("releasever_major", "releasever_minor"))
+READ_ONLY_VARIABLES = frozenset()
 logger = logging.getLogger('dnf')
 
 
@@ -45,18 +45,6 @@ class Substitutions(dict):
             elif key in numericvars:
                 self[key] = val
 
-    @staticmethod
-    def _split_releasever(releasever):
-        # type: (str) -> tuple[str, str]
-        pos = releasever.find(".")
-        if pos == -1:
-            releasever_major = releasever
-            releasever_minor = ""
-        else:
-            releasever_major = releasever[:pos]
-            releasever_minor = releasever[pos + 1:]
-        return releasever_major, releasever_minor
-
     def __setitem__(self, key, value):
         if Substitutions.is_read_only(key):
             raise ReadOnlyVariableError(f"Variable \"{key}\" is read-only", variable_name=key)
@@ -65,7 +53,7 @@ class Substitutions(dict):
         setitem(key, value)
 
         if key == "releasever" and value:
-            releasever_major, releasever_minor = Substitutions._split_releasever(value)
+            releasever_major, releasever_minor = ConfigParser.splitReleasever(value)
             setitem("releasever_major", releasever_major)
             setitem("releasever_minor", releasever_minor)
 

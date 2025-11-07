@@ -8,12 +8,11 @@
   ANY WARRANTY expressed or implied, including the implied warranties of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
   Public License for more details.  You should have received a copy of the
-  GNU General Public License along with this program; if not, write to the
-  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-  02110-1301, USA.  Any Red Hat trademarks that are incorporated in the
-  source code or documentation are not subject to the GNU General Public
-  License and may only be used or replicated with the express permission of
-  Red Hat, Inc.
+  GNU General Public License along with this program; if not, see
+  <https://www.gnu.org/licenses/>.  Any Red Hat trademarks that are
+  incorporated in the source code or documentation are not subject to the GNU
+  General Public License and may only be used or replicated with the express
+  permission of Red Hat, Inc.
 
 .. _conf_ref-label:
 
@@ -442,6 +441,17 @@ configuration file by your distribution to override the DNF defaults.
 
     Directory where DNF stores its persistent data between runs. Default is ``"/var/lib/dnf"``.
 
+.. _persistence-label:
+
+``persistence``
+    :ref:`string <string-label>`
+
+    Whether changes should persist across system reboots. Default is ``auto``. Passing :ref:`--transient <transient_option-label>` will override this setting to ``transient``. Valid values are:
+
+    * ``auto``: Changes will persist across reboots, unless the target is a running bootc system and the system is already in an unlocked state (i.e. ``/usr`` is writable).
+    * ``transient``: Changes will be lost on the next reboot. Only applicable on bootc systems. Beware that changes to ``/etc`` and ``/var`` will persist, depending on the configuration of your bootc system. See also https://bootc-dev.github.io/bootc/man/bootc-usr-overlay.html.
+    * ``persist``: Changes will persist across reboots.
+
 .. _pluginconfpath-label:
 
 ``pluginconfpath``
@@ -491,6 +501,8 @@ configuration file by your distribution to override the DNF defaults.
     Used for substitution of ``$releasever`` in the repository configuration.
 
     The ``$releasever_major`` and ``$releasever_minor`` variables will be automatically derived from ``$releasever`` by splitting it on the first ``.``. For example, if ``$releasever`` is set to ``1.23``, then ``$releasever_major`` will be ``1`` and ``$releasever_minor`` will be ``23``.
+
+    ``$releasever_major`` and ``$releasever_minor`` can also be set by the distribution.
 
     See also :ref:`repo variables <repo-variables-label>`.
 
@@ -553,6 +565,15 @@ configuration file by your distribution to override the DNF defaults.
     :ref:`boolean <boolean-label>`
 
     Set this to False to disable the automatic running of ``group upgrade`` when running the ``upgrade`` command. Default is ``True`` (perform the operation).
+
+.. _usr_drift_protected_paths-label:
+
+``usr_drift_protected_paths``
+    :ref:`list <list-label>`
+
+    List of paths that are likely to cause problems when their contents drift with respect to ``/usr``, e.g. ``/etc/pam.d/*``. If a transient transaction would modify these paths, DNF aborts the operation and prints an error. Supports globs. Defaults to ``glob:/etc/dnf/usr-drift-protected-paths.d/*.conf``. So a list of paths can be protected by creating a ``.conf`` file in ``/etc/dnf/usr-drift-protected-paths.d/`` containing one path (or glob pattern) per line.
+
+    When using ``persistence=transient`` on bootc systems, a transient overlay is created on ``/usr``, and any changes DNF makes to ``/usr`` will be discarded on reboot. However, other paths such as ``/etc`` and ``/var`` are (often) not backed by a transient overlay, so changes to them will persist across reboots. Usually, this "filesystem drift" is fine, but it can cause problems in certain situations. For example, a configuration file in ``/etc`` that's shared by multiple packages might reference a ``.so`` file under ``/usr/lib64`` that no longer exists.
 
 .. _varsdir_options-label:
 
